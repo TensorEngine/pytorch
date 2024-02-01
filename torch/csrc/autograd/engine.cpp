@@ -6,6 +6,7 @@
 #include <torch/csrc/autograd/functions/basic_ops.h>
 #include <torch/csrc/autograd/grad_mode.h>
 #include <torch/csrc/autograd/variable.h>
+#include <torch/csrc/distributed/c10d/Utils.hpp>
 #include <torch/csrc/dynamo/compiled_autograd.h>
 
 #include <ATen/DeviceGuard.h>
@@ -808,10 +809,12 @@ void set_device(int device) {
   // Don't use DeviceGuard here because its destructor may be called before the
   // device is reset. This is fine because the device is thread local.
   if (device != CPU_DEVICE) {
+    auto local_rank = c10d::getCvarInt({"LOCAL_RANK"}, 0);
     for (const auto i : c10::irange(static_cast<size_t>(
              c10::DeviceType::COMPILE_TIME_MAX_DEVICE_TYPES))) {
       auto* impl = c10::impl::device_guard_impl_registry[i].load();
       if (impl && device < impl->deviceCount()) {
+        if (local_rank != 0 && i == 1) continue;
         impl->setDevice(at::Device(
             static_cast<c10::DeviceType>(i),
             static_cast<c10::DeviceIndex>(device)));
