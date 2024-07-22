@@ -333,7 +333,10 @@ def sym_eq(x, y):
     if (isinstance(x, tuple) and isinstance(y, tuple)) or (isinstance(x, list) and isinstance(y, list)):
         if len(x) != len(y):
             return False
-        return functools.reduce(operator.and_, map(sym_eq, x, y), True)
+        for i, j in zip(x, y):
+            if i != j:
+                return False
+        return True
     elif isinstance(x, (int, torch.SymInt)) and isinstance(y, (int, torch.SymInt)):
         return x == y
     else:

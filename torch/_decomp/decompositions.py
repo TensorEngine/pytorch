@@ -714,7 +714,15 @@ def slice_backward(
     end: int,
     step: int,
 ):
-    grad_input = grad_output.new_zeros(input_sizes)
+    grad_input = torch.full(
+        input_sizes,
+        False if grad_output.dtype == torch.bool else 0,
+        dtype=grad_output.dtype,
+        layout=grad_output.layout,
+        device=grad_output.device,
+        pin_memory=False,
+        requires_grad=False,
+    )
     return torch.slice_scatter(grad_input, grad_output, dim, start, end, step)
 
 
